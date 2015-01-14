@@ -1,0 +1,89 @@
+<%= form_for(@solicitation) do |f| %>
+  <% if @solicitation.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@solicitation.errors.count, "error") %> prohibited this solicitation from being saved:</h2>
+
+      <ul>
+      <% @solicitation.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :buy_num %><br>
+    <%= f.text_field :buy_num %>
+  </div>
+  <div class="field">
+    <%= f.label :rev %><br>
+    <%= f.text_field :rev %>
+  </div>
+  <div class="field">
+    <%= f.label :title %><br>
+    <%= f.text_field :title %>
+  </div>
+  <div class="field">
+    <%= f.label :buyer %><br>
+    <%= f.text_field :buyer %>
+  </div>
+  <div class="field">
+    <%= f.label :end_time %><br>
+    <%= f.text_field :end_time %>
+  </div>
+  <div class="field">
+    <%= f.label :set_aside_req %><br>
+    <%= f.text_field :set_aside_req %>
+  </div>
+  <div class="field">
+    <%= f.label :location %><br>
+    <%= f.text_field :location %>
+  </div>
+  <div class="field">
+    <%= f.label :category %><br>
+    <%= f.text_field :category %>
+  </div>
+  <div class="field">
+    <%= f.label :subcategory %><br>
+    <%= f.text_field :subcategory %>
+  </div>
+  <div class="field">
+    <%= f.label :naics %><br>
+    <%= f.text_field :naics %>
+  </div>
+  <div class="field">
+    <%= f.label :fbo_solicitation %><br>
+    <%= f.text_field :fbo_solicitation %>
+  </div>
+  <div class="field">
+    <%= f.label :recovery_act %><br>
+    <%= f.text_field :recovery_act %>
+  </div>
+  <div class="field">
+    <%= f.label :delivery %><br>
+    <%= f.text_field :delivery %>
+  </div>
+  <div class="field">
+    <%= f.label :bid_delivery_days %><br>
+    <%= f.text_field :bid_delivery_days %>
+  </div>
+  <div class="field">
+    <%= f.label :repost_reason %><br>
+    <%= f.text_field :repost_reason %>
+  </div>
+  <div class="field">
+    <%= f.label :solicitation_num %><br>
+    <%= f.text_field :solicitation_num %>
+  </div>
+  <div class="field">
+    <%= f.label :revised_at %><br>
+    <%= f.text_field :revised_at %>
+  </div>
+  <div class="field">
+    <%= f.label :removed_at %><br>
+    <%= f.text_field :removed_at %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

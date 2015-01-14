@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="ADT_Model" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" annotation:UseStrongSpatialTypes="false">
+  <EntityContainer Name="ADT_ModelContainer1" annotation:LazyLoadingEnabled="true">
+    <EntitySet Name="ADTMessages" EntityType="ADT_Model.ADTMessage" />
+    <EntitySet Name="Patients" EntityType="ADT_Model.Patient" />
+    <EntitySet Name="Locations" EntityType="ADT_Model.Location" />
+  </EntityContainer>
+  <EntityType Name="ADTMessage">
+    <Key>
+      <PropertyRef Name="MessageID" />
+    </Key>
+    <Property Name="MessageID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+    <Property Name="MessageType" Type="String" Nullable="false" />
+    <Property Name="PreviousLocationID" Type="String" Nullable="false" />
+    <Property Name="LocationID" Type="String" Nullable="false" />
+    <Property Name="PreviousStatus" Type="String" Nullable="false" />
+    <Property Name="Status" Type="String" Nullable="false" />
+    <Property Name="KickedPatientID" Type="String" Nullable="false" />
+    <Property Name="GeneratedTimestamp" Type="DateTime" Nullable="false" />
+    <Property Name="MessageTimestamp" Type="DateTime" Nullable="false" />
+    <Property Name="PatientID" Type="String" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Patient">
+    <Key>
+      <PropertyRef Name="PatientID" />
+    </Key>
+    <Property Name="PatientID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+    <Property Name="FirstName" Type="String" Nullable="false" />
+    <Property Name="LastName" Type="String" Nullable="false" />
+    <Property Name="Status" Type="String" Nullable="false" />
+    <Property Name="LocationID" Type="String" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Location">
+    <Key>
+      <PropertyRef Name="LocationID" />
+    </Key>
+    <Property Name="LocationID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+  </EntityType>
+</Schema>

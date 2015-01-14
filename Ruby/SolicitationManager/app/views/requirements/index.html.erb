@@ -1,0 +1,31 @@
+<h1>Listing requirements</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Buy num</th>
+      <th>Title</th>
+      <th>Specification</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @requirements.each do |requirement| %>
+      <tr>
+        <td><%= requirement.buy_num %></td>
+        <td><%= requirement.title %></td>
+        <td><%= requirement.specification %></td>
+        <td><%= link_to 'Show', requirement %></td>
+        <td><%= link_to 'Edit', edit_requirement_path(requirement) %></td>
+        <td><%= link_to 'Destroy', requirement, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Requirement', new_requirement_path %>

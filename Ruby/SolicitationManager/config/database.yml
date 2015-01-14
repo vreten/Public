@@ -1,0 +1,22 @@
+ 
+development:
+  adapter: mysql2
+  database: SolicitationManager_development
+  username: root
+  password: 0p3ns3as3m3
+  host: localhost
+  #port: 3306
+test:
+  adapter: mysql2
+  database: SolicitationManager_test
+  username: root
+  password: 0p3ns3as3m3
+  #port: 3306
+production:
+  adapter: mysql2
+  database: SolicitationManager_production
+  username: root
+  password: 0p3ns3as3m3
+  #port: 3306
+
+  

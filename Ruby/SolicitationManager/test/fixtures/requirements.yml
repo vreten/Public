@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  buy_num: MyString
+  title: MyString
+  specification: MyText
+
+two:
+  buy_num: MyString
+  title: MyString
+  specification: MyText

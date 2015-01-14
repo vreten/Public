@@ -1,0 +1,8 @@
+D:\cunic.ddns.net\svn\trunk\BedCommService\bin\Debug\bin\HL7Master.exe
+D:\cunic.ddns.net\svn\trunk\BedCommService\bin\Debug\bin\HL7Master.pdb
+D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.csprojResolveAssemblyReference.cache
+D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.HL7MasterForm.resources
+D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.Properties.Resources.resources
+D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.csproj.GenerateResource.Cache
+D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.exe
+D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.pdb

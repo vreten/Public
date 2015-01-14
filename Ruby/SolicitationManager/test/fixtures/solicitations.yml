@@ -1,0 +1,41 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  buy_num: MyString
+  rev: MyString
+  title: MyString
+  buyer: MyString
+  end_time: MyString
+  set_aside_req: MyString
+  location: MyString
+  category: MyString
+  subcategory: MyString
+  naics: MyString
+  fbo_solicitation: MyString
+  recovery_act: MyString
+  delivery: MyString
+  bid_delivery_days: MyString
+  repost_reason: MyString
+  solicitation_num: MyString
+  revised_at: MyString
+  removed_at: MyString
+
+two:
+  buy_num: MyString
+  rev: MyString
+  title: MyString
+  buyer: MyString
+  end_time: MyString
+  set_aside_req: MyString
+  location: MyString
+  category: MyString
+  subcategory: MyString
+  naics: MyString
+  fbo_solicitation: MyString
+  recovery_act: MyString
+  delivery: MyString
+  bid_delivery_days: MyString
+  repost_reason: MyString
+  solicitation_num: MyString
+  revised_at: MyString
+  removed_at: MyString

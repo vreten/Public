@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="1225814430ce45d1a6a1ddb900d414de" Name="Diagram1" >
+        <EntityTypeShape EntityType="ADT_Model.ADTMessage" Width="2" PointX="2" PointY="1.125" />
+        <EntityTypeShape EntityType="ADT_Model.Patient" Width="2" PointX="7.625" PointY="0.875" />
+        <EntityTypeShape EntityType="ADT_Model.Location" Width="1.5" PointX="5.5" PointY="3.75" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

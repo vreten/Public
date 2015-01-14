@@ -1,0 +1,61 @@
+<h1>Listing solicitations</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Buy num</th>
+      <th>Rev</th>
+      <th>Title</th>
+      <th>Buyer</th>
+      <th>End time</th>
+      <th>Set aside req</th>
+      <th>Location</th>
+      <th>Category</th>
+      <th>Subcategory</th>
+      <th>Naics</th>
+      <th>Fbo solicitation</th>
+      <th>Recovery act</th>
+      <th>Delivery</th>
+      <th>Bid delivery days</th>
+      <th>Repost reason</th>
+      <th>Solicitation num</th>
+      <th>Revised at</th>
+      <th>Removed at</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @solicitations.each do |solicitation| %>
+      <tr>
+        <td><%= solicitation.buy_num %></td>
+        <td><%= solicitation.rev %></td>
+        <td><%= solicitation.title %></td>
+        <td><%= solicitation.buyer %></td>
+        <td><%= solicitation.end_time %></td>
+        <td><%= solicitation.set_aside_req %></td>
+        <td><%= solicitation.location %></td>
+        <td><%= solicitation.category %></td>
+        <td><%= solicitation.subcategory %></td>
+        <td><%= solicitation.naics %></td>
+        <td><%= solicitation.fbo_solicitation %></td>
+        <td><%= solicitation.recovery_act %></td>
+        <td><%= solicitation.delivery %></td>
+        <td><%= solicitation.bid_delivery_days %></td>
+        <td><%= solicitation.repost_reason %></td>
+        <td><%= solicitation.solicitation_num %></td>
+        <td><%= solicitation.revised_at %></td>
+        <td><%= solicitation.removed_at %></td>
+        <td><%= link_to 'Show', solicitation %></td>
+        <td><%= link_to 'Edit', edit_solicitation_path(solicitation) %></td>
+        <td><%= link_to 'Destroy', solicitation, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Solicitation', new_solicitation_path %>

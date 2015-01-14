@@ -1,0 +1,23 @@
+
+development:
+  adapter: mysql2
+  database: MattsList_development
+  username: root
+  password: dangermatt505
+  host: localhost
+  socket: C:\BitNami\rubystack-1.9.3-10/mysql/tmp/mysql.sock
+  #port: 3306
+test:
+  adapter: mysql2
+  database: MattsList_test
+  username: root
+  password: dangermatt505
+  socket: C:\BitNami\rubystack-1.9.3-10/mysql/tmp/mysql.sock
+  #port: 3306
+production:
+  adapter: mysql2
+  database: MattsList_production
+  username: root
+  password: dangermatt505
+  socket: C:\BitNami\rubystack-1.9.3-10/mysql/tmp/mysql.sock
+  #port: 3306

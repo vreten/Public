@@ -1,0 +1,19 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  buy_num: MyString
+  item_num: MyString
+  description: MyText
+  qty: MyString
+  unit: MyString
+  option: MyString
+  period_of_performance: MyString
+
+two:
+  buy_num: MyString
+  item_num: MyString
+  description: MyText
+  qty: MyString
+  unit: MyString
+  option: MyString
+  period_of_performance: MyString
