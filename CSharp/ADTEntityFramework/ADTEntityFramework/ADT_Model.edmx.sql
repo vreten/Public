@@ -2,8 +2,8 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 01/13/2015 03:24:23
--- Generated from EDMX file: C:\Users\Matt\documents\visual studio 2013\Projects\Expressions\Expressions\ADT_Model.edmx
+-- Date Created: 01/16/2015 14:29:20
+-- Generated from EDMX file: D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\ADT_Model.edmx
 -- --------------------------------------------------
 
 SET QUOTED_IDENTIFIER OFF;
@@ -38,13 +38,13 @@ GO
 
 -- Creating table 'ADTMessages'
 CREATE TABLE [dbo].[ADTMessages] (
-    [MessageID] nvarchar(max)  NOT NULL,
+    [MessageID] nvarchar(255)  NOT NULL,
     [MessageType] nvarchar(max)  NOT NULL,
-    [PreviousLocationID] nvarchar(max)  NOT NULL,
-    [LocationID] nvarchar(max)  NOT NULL,
-    [PreviousStatus] nvarchar(max)  NOT NULL,
+    [PreviousLocationID] nvarchar(max)  NULL,
+    [LocationID] nvarchar(max)  NULL,
+    [PreviousStatus] nvarchar(max)  NULL,
     [Status] nvarchar(max)  NOT NULL,
-    [KickedPatientID] nvarchar(max)  NOT NULL,
+    [KickedPatientID] nvarchar(max)  NULL,
     [GeneratedTimestamp] datetime  NOT NULL,
     [MessageTimestamp] datetime  NOT NULL,
     [PatientID] nvarchar(max)  NOT NULL
@@ -53,17 +53,17 @@ GO
 
 -- Creating table 'Patients'
 CREATE TABLE [dbo].[Patients] (
-    [PatientID] nvarchar(max)  NOT NULL,
-    [FirstName] nvarchar(max)  NOT NULL,
-    [LastName] nvarchar(max)  NOT NULL,
+    [PatientID] nvarchar(255)  NOT NULL,
+    [FirstName] nvarchar(max)  NULL,
+    [LastName] nvarchar(max)  NULL,
     [Status] nvarchar(max)  NOT NULL,
-    [LocationID] nvarchar(max)  NOT NULL
+    [LocationID] nvarchar(max)  NULL
 );
 GO
 
 -- Creating table 'Locations'
 CREATE TABLE [dbo].[Locations] (
-    [LocationID] nvarchar(max)  NOT NULL
+    [LocationID] nvarchar(255)  NOT NULL
 );
 GO
 

@@ -9,13 +9,13 @@
     <Key>
       <PropertyRef Name="MessageID" />
     </Key>
-    <Property Name="MessageID" Type="nvarchar(max)" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="MessageID" Type="nvarchar" Nullable="false" MaxLength="255" />
     <Property Name="MessageType" Type="nvarchar(max)" Nullable="false" />
-    <Property Name="PreviousLocationID" Type="nvarchar(max)" Nullable="false" />
-    <Property Name="LocationID" Type="nvarchar(max)" Nullable="false" />
-    <Property Name="PreviousStatus" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="PreviousLocationID" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="LocationID" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="PreviousStatus" Type="nvarchar(max)" Nullable="true" />
     <Property Name="Status" Type="nvarchar(max)" Nullable="false" />
-    <Property Name="KickedPatientID" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="KickedPatientID" Type="nvarchar(max)" Nullable="true" />
     <Property Name="GeneratedTimestamp" Type="datetime" Nullable="false" />
     <Property Name="MessageTimestamp" Type="datetime" Nullable="false" />
     <Property Name="PatientID" Type="nvarchar(max)" Nullable="false" />
@@ -24,16 +24,16 @@
     <Key>
       <PropertyRef Name="PatientID" />
     </Key>
-    <Property Name="PatientID" Type="nvarchar(max)" StoreGeneratedPattern="Identity" Nullable="false" />
-    <Property Name="FirstName" Type="nvarchar(max)" Nullable="false" />
-    <Property Name="LastName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="PatientID" Type="nvarchar" Nullable="false" MaxLength="255" />
+    <Property Name="FirstName" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="LastName" Type="nvarchar(max)" Nullable="true" />
     <Property Name="Status" Type="nvarchar(max)" Nullable="false" />
-    <Property Name="LocationID" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="LocationID" Type="nvarchar(max)" Nullable="true" />
   </EntityType>
   <EntityType Name="Locations">
     <Key>
       <PropertyRef Name="LocationID" />
     </Key>
-    <Property Name="LocationID" Type="nvarchar(max)" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="LocationID" Type="nvarchar" Nullable="false" MaxLength="255" />
   </EntityType>
 </Schema>

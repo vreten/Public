@@ -15,7 +15,9 @@ namespace ADTEntityFramework
     
     public partial class Location
     {
-        public Location( // Here is the constructor
+        public Location(){} // Here is the zero-parameter constructor
+    
+        public Location( // Here is the initialization constructor
             string _LocationID )
         {
             LocationID = _LocationID;

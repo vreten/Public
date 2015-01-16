@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Validation;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -25,7 +26,7 @@ namespace ADTEntityFramework
         public static int TCP_PORT = 2015;
         public static byte[] EOM = new byte[] { 0x1c, 0x0d };
 
-        public static bool DeleteDischargedPatients = false;
+        public static bool DeleteDischargedPatients = false;   // TODO: code this
 
         public static bool CreateLocations = true;
         public static bool Process_A01 = true;
@@ -33,10 +34,23 @@ namespace ADTEntityFramework
         public static bool Process_A03 = true;
         public static bool Process_A06 = true;
         public static bool Process_A07 = true;
-        public static bool Process_A08 = true;
+        public static bool Process_A08 = false;
         public static bool Process_A11 = false;
         public static bool Process_A12 = false;
         public static bool Process_A13 = false;
+
+
+        // Enabled: Concat --(counter) to duplicate message ID's
+        // Disabled: Ignore messages with duplicate message ID's
+        public static bool AllowDuplicateMessageIDs = true;
+
+        // Log every received and sent message
+        public static bool LogAllMessages = false;
+
+        public static bool LogErrors = true;
+        public static bool LogWarnings = true;
+        public static bool logInfo = true;
+        public static bool logDebug = false;
 
     }
 
@@ -65,13 +79,31 @@ namespace ADTEntityFramework
         private static void TCP_Listen_Thread_Function()
         {
             TcpListener server = null;
+            ADTMessage adt_message;
             try
             {
+                MLog.Info("Caching database...");
+                try
+                {
+                    using (var db = new ADT_ModelContainer1())
+                    {
+                        var q1 = 
+                            from adt in db.ADTMessages
+                            where adt.MessageID == "1"
+                            select adt;
+
+                        var c1 = q1.First();
+                    }
+                }
+                catch (Exception)
+                {
+                }
+
                 Int32 port = Convert.ToInt32(Global.TCP_PORT);
 
                 if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
                 {
-                    Console.WriteLine("No network available... Press any key to exit.");
+                    MLog.Error("No network available... Press any key to exit.");
                     Console.ReadKey();
                     return;
                 }
@@ -86,44 +118,53 @@ namespace ADTEntityFramework
 
                 // Buffer for reading data
                 byte[] raw;
+                string rawString = "";
                 
                 // Enter the listening loop. 
                 while (true)
                 {
-                    Console.Write("Waiting for a connection... ");
+                    MLog.Info("Waiting for a connection... ");
 
                     // Perform a blocking call to accept requests. 
                     // You could also user server.AcceptSocket() here.
                     TcpClient client = server.AcceptTcpClient();
-                    Console.WriteLine("Connected!");
+                    MLog.Info("Connected!");
                     NetworkStream stream = client.GetStream();
+                    int i = 0;
 
                     while (client.Connected)
                     {
+                        // If this truly loops around 1 time per message
+                        // then let the info about the message be known
+                        // MLog.Info("Yo, whatup!" + i++);
+
                         try
                         {
                             // this reads exactly 1 message
                             raw = blockingEOMRead(stream, 1000, 500, 1000, Global.EOM);
 
-                            Console.WriteLine("Received:\n" + Tool.ByteArrayToString(raw));
+                            //MLog.Info("Test: " + i);
+
+                            if (raw.Length == 0 || raw.Length == 1) continue;
+
+                            rawString = Tool.ByteArrayToString(raw);
+
+                            MLog.MsgCapture("Received: " + rawString);
 
                             // This extracts data from the message string
-                            ADTMessage adt_message = new ADTMessage(
-                                System.Text.Encoding.UTF8.GetString(raw.ToArray()),
-                                DateTime.Now);
+                            adt_message = new ADTMessage(rawString, DateTime.Now);
 
                             // Read from/Write to Patient and Location tables in database
-                            adt_message.parse();
+                            if (!adt_message.skip) adt_message.parse();
 
-                            // Write adt_message to the database
-                            adt_message.CreateInDatabase();
+                            adt_message.Log();
 
                             // Send an acknowledge
                             sendAck(stream);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Exception Detected; Closing Connection.\n" + ex.Message);
+                            MLog.Error("Exception Detected in msg: |" + rawString + "| Closing Connection.\n" + ex.Message);
                             client.Close();
 
                             break;
@@ -133,7 +174,7 @@ namespace ADTEntityFramework
             }
             catch (SocketException ex)
             {
-                Console.WriteLine("SocketException: {0}", ex);
+                MLog.Error("FATAL: SocketException: " + ex);
             }
             finally
             {
@@ -150,7 +191,7 @@ namespace ADTEntityFramework
                                     "MSA|AA|\x1C\x0D");
 
             stream.Write(ackMsg, 0, ackMsg.Length);
-            // Console.WriteLine("Sent:\n" + DriverTools.ByteArrayToString(ackMsg));
+            MLog.MsgCapture("Sent    : " + Tool.ByteArrayToString(ackMsg));
         }
 
         public static string LocalIPAddress()
@@ -226,45 +267,47 @@ namespace ADTEntityFramework
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         public string FirstName;
         public string LastName;
+        ADTLookupResult adtLookupResult;
         LocationLookupResult locationLookupResult;
         PatientLookupResult patientLookupResult;
+        public List<string> warnList = new List<string>();
+        public bool skip = false;
 
         //____ ____ _  _ ____ ___ ____ _  _ ____ ___ ____ ____ 
         //|    |  | |\ | [__   |  |__/ |  | |     |  |  | |__/ 
         //|___ |__| | \| ___]  |  |  \ |__| |___  |  |__| |  \ 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        public ADTMessage(string _MessageID)
+        {
+            MessageID = _MessageID;
+        }
+
         public ADTMessage(string rawString, DateTime _GeneratedTimestamp)
         {
             // This parses the ADT string
             // and fills its own fields based on it
 
             GeneratedTimestamp = _GeneratedTimestamp;
-            string MSHTimeString = "";
 
-            string[] segments = rawString.Replace("" + (char)11, "").Split(new string[] { "\r" }, StringSplitOptions.None);
+            string[] subfields; // Move these declarations out of the loop
+
+            string unit = "";
+            string room = "";
+            string bed = "";
+            string facility = "";
+            string[] fields;
+
+            string[] segments = rawString.Split(new string[] { "\r", "\n", "\\r", "\\n", "\v" }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string segment in segments)
             {
-                string[] fields = segment.Split(new string[] { "|" }, StringSplitOptions.None);
-                string[] subfields;
-
-                string unit = "";
-                string room = "";
-                string bed = "";
-                string facility = "";
+                fields = segment.Split(new string[] { "|", "\v" }, StringSplitOptions.None);
 
                 switch (fields[0])
                 {
                     case "MSH":
-                        try
-                        {
-                            MSHTimeString = fields[6];
-                            MessageTimestamp = DateTime.ParseExact(MSHTimeString, "yyyyMMddHHmmss", CultureInfo.CurrentCulture);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Error parsing msg time: " + ex.Message);
-                        }
+
+                        MessageTimestamp = getMSHTime(fields[6]);
 
                         try
                         {
@@ -273,7 +316,9 @@ namespace ADTEntityFramework
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Error parsing msg type: " + ex.Message);
+                            warnList.Add("SKIP: Could not parse ADT msg type");
+                            skip = true;
+                            return;
                         }
 
                         try
@@ -282,7 +327,9 @@ namespace ADTEntityFramework
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Error parsing msg ID: " + ex.Message);
+                            warnList.Add("SKIP: Could not parse ADT msg ID");
+                            skip = true;
+                            return;
                         }
 
                         break;
@@ -299,7 +346,7 @@ namespace ADTEntityFramework
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Error parsing patientID, FirstName, or LastName: " + ex.Message);
+                            warnList.Add("Could not parse patientID, FirstName, or LastName");
                         }
 
                         break;
@@ -326,6 +373,19 @@ namespace ADTEntityFramework
 
             }
 
+        }
+
+        public DateTime getMSHTime(String stringTimestamp)
+        {
+            DateTime parsedDate = DateTime.UtcNow;
+
+            if (DateTime.TryParseExact(stringTimestamp, "yyyyMMddHHmmss", null, DateTimeStyles.AdjustToUniversal, out parsedDate))
+                MLog.Debug("Seconds in '" + stringTimestamp + "' timestamp (" + parsedDate + "()");
+            else if (DateTime.TryParseExact(stringTimestamp, "yyyyMMddHHmm", null, DateTimeStyles.AdjustToUniversal, out parsedDate))
+                MLog.Debug("No seconds in '" + stringTimestamp + "' timestamp (" + parsedDate + ")");
+            else
+                MLog.Debug("Unable to convert '" + stringTimestamp + "' to timestamp. Using UTCNow.");
+            return parsedDate;
         }
 
         //___  ____ ____ ____ ____ 
@@ -366,19 +426,27 @@ namespace ADTEntityFramework
             // Discharged
 
             // Query the database for the identifiers in the message
+            adtLookupResult = ADTMessage.FindByID(MessageID);
             locationLookupResult = Location.FindByID(LocationID);
             patientLookupResult = Patient.FindByID(PatientID);
+
+
+            switch (adtLookupResult.status)
+            {
+                case ADTLookupStatus.Blank: warnList.Add("SKIP: Blank Message ID"); skip = true; return;
+                case ADTLookupStatus.Found: warnList.Add("SKIP: Message Already Exists"); skip = true; return;
+                case ADTLookupStatus.CreatedNew: MessageID = adtLookupResult.message.MessageID; break;
+            }
 
             switch (patientLookupResult.status)
 	        {
                 // If there is no patient: WARN AND EXIT
-                case PatientLookupStatus.Blank: WARN(); return;
+                case PatientLookupStatus.Blank: warnList.Add("SKIP: No Patient ID"); skip = true; return;
 
                 // If there is no patient: INITIALIZE BASIC INFO
                 case PatientLookupStatus.CreatedNew:
                     patientLookupResult.patient.FirstName = FirstName;
                     patientLookupResult.patient.LastName = LastName;
-                    patientLookupResult.patient.CreateInDatabase();
                     break;
 	        }
 
@@ -386,17 +454,23 @@ namespace ADTEntityFramework
             {
                 // These messages can update a patient's location
                 case "A01": case "A02": case "A06": case "A08":
-                    
+
+                    int h = 5;
+                    if(MessageType == "A06") h = 4;
+
                     // If there is no location 
                     // WARN AND EXIT
                     if (locationLookupResult.location == null) {
-                        WARN(); return; // remove this return, and messages with blank locations can move a patient out of a location
+                        warnList.Add("SKIP: There was no location in " + MessageType); skip = true;  return;
                     }
 
                     // If there is an existing patient
                     // WARN AND KICK
-                    if (locationLookupResult.existingPatient != null) {
-                        WARN(); KickPatient();
+                    if (locationLookupResult.existingPatient != null && 
+                        locationLookupResult.existingPatient.PatientID != PatientID)
+                    {
+                        warnList.Add("Kicking existing Patient");
+                        KickPatient();
                     }
 
                     // Update the patient, and ADT message
@@ -410,25 +484,81 @@ namespace ADTEntityFramework
                     // If there is no location 
                     // WARN
                     if (locationLookupResult.location == null) 
-                        WARN();
+                        warnList.Add("There was no location in " + MessageType);
                     
                     // If there is an existing patient
                     // WARN
-                    if (locationLookupResult.existingPatient != null) 
-                        WARN();
+                    if (locationLookupResult.existingPatient != null &&
+                        locationLookupResult.existingPatient.PatientID != PatientID)
+                    {
+                        warnList.Add(MessageType + " indicated different patient in location");
+                    }
                     
                     // Discharge the patient
                     Discharge();
 
                     break;
 
-                case "A11": if (Global.Process_A11) CancelAdmit(); break;
-                case "A12": if (Global.Process_A12) CancelTransfer(); break;
-                case "A13": if (Global.Process_A13) CancelDischarge(); break;
+                //case "A11": if (Global.Process_A11) CancelAdmit(); break;
+                //case "A12": if (Global.Process_A12) CancelTransfer(); break;
+                //case "A13": if (Global.Process_A13) CancelDischarge(); break;
 
+                default: warnList.Add("SKIP: " + MessageType + " messages are not handled"); skip = true;  return;
             }
 
+            // Write adt_message to the database
+            CreateInDatabase();
+
         }
+
+
+
+        //____ _ _  _ ___  ___  _   _ _ ___  
+        //|___ | |\ | |  \ |__]  \_/  | |  \ 
+        //|    | | \| |__/ |__]   |   | |__/ 
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        public static ADTLookupResult FindByID(String ID_toQuery)
+        {
+            ADTMessage adt_message;
+
+            using (var db = new ADT_ModelContainer1())
+            {
+                if (ID_toQuery == "") return new ADTLookupResult(ADTLookupStatus.Blank, null);
+                else
+                {
+                    try
+                    {
+                        // Check database for ADTMessage
+                        adt_message = db.ADTMessages.First(adt => adt.MessageID == ID_toQuery);
+
+                        // ADTMessage was found...
+
+                        // If AllowDuplicateMessageIDs is set, recursively find the next available MessageID
+                        if (Global.AllowDuplicateMessageIDs)
+                        {
+                            string[] full_id_split = ID_toQuery.Split(new string[] { "--" }, StringSplitOptions.None);
+                            if(full_id_split.Length == 1)
+                                return FindByID(ID_toQuery + "--1");
+                            else
+                            {
+                                return FindByID(full_id_split[0] + "--" + (Int32.Parse(full_id_split[1]) + 1));
+                            }
+                        }
+                        // Otherwise, return that it was found
+                        else
+                            return new ADTLookupResult(ADTLookupStatus.Found, adt_message);
+                    }
+                    // TargetInvocationException
+                    catch (Exception)
+                    {
+                        adt_message = new ADTMessage(ID_toQuery);
+                        return new ADTLookupResult(ADTLookupStatus.CreatedNew, adt_message);
+                    }
+                }
+            }
+        }
+
+
 
         //_  _ ___  ___  ____ ___ ____ 
         //|  | |__] |  \ |__|  |  |___ 
@@ -453,21 +583,50 @@ namespace ADTEntityFramework
             Status = patientLookupResult.patient.Status;
             LocationID = patientLookupResult.patient.LocationID;
 
-            patientLookupResult.patient.UpdateInDatabase();
+            switch (patientLookupResult.status)
+            {
+                // Add patient to database
+                case PatientLookupStatus.CreatedNew:
+                    patientLookupResult.patient.CreateInDatabase();
+                    break;
+
+                // Update patient in database
+                case PatientLookupStatus.Found:
+                    patientLookupResult.patient.UpdateInDatabase();
+                    break;
+            }
         }
+        
+
 
         //_ _ _ ____ ____ _  _ 
         //| | | |__| |__/ |\ | 
         //|_|_| |  | |  \ | \| 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        private void WARN()
+
+        internal void Log()
         {
-            Console.WriteLine("WARN: Message " + MessageID +
-                                "\n\tLocation status = " +
-                                Enum.GetName(typeof(LocationLookupStatus), locationLookupResult.status) +
-                                "\n\tPatient status = " +
-                                Enum.GetName(typeof(PatientLookupStatus), patientLookupResult.status));
+            string msg = LookupStatusesToString() + (skip? "Skipped! " : "STORED!  ");
+
+            if(warnList.Count() > 0) msg += warnList.Count() + " Warnings: " + string.Join("; ", warnList);
+            
+            MLog.Info(msg);
         }
+        
+        
+        private string LookupStatusesToString()
+        {
+            return String.Format( 
+                "msgID {0,-14}, msgType {1,-3}, adt {2,-10}, patient {3,-10}, location = {4,-27}: ",
+                MessageID,
+                MessageType,
+                Enum.GetName(typeof(ADTLookupStatus), adtLookupResult.status),
+                Enum.GetName(typeof(PatientLookupStatus), patientLookupResult.status),
+                Enum.GetName(typeof(LocationLookupStatus), locationLookupResult.status)
+            );
+        }
+
+
 
         //_  _ _ ____ _  _ ___  ____ ___ _ ____ _  _ ___ 
         //|_/  | |    |_/  |__] |__|  |  | |___ |\ |  |  
@@ -476,13 +635,12 @@ namespace ADTEntityFramework
         private void KickPatient()
         {
             // Update the kicked patient
-            locationLookupResult.existingPatient.LocationID = "";
+            locationLookupResult.existingPatient.LocationID = null;
             locationLookupResult.existingPatient.Status = Enum.GetName(typeof(PatientStatus), PatientStatus.AdmittedWithoutLocation);
             locationLookupResult.existingPatient.UpdateInDatabase();
 
             // Store the kicked patient in the ADT Message
             KickedPatientID = locationLookupResult.existingPatient.PatientID;
-            UpdateInDatabase();
         }
 
         //___  _ ____ ____ _  _ ____ ____ ____ ____ 
@@ -499,12 +657,23 @@ namespace ADTEntityFramework
             patientLookupResult.patient.Status = Enum.GetName(typeof(PatientStatus), PatientStatus.Discharged);
 
             // Store the patient's new location
-            patientLookupResult.patient.LocationID = "";
+            patientLookupResult.patient.LocationID = null;
 
             Status = Enum.GetName(typeof(PatientStatus), PatientStatus.Discharged);
-            LocationID = "";
+            LocationID = null;
 
-            patientLookupResult.patient.UpdateInDatabase();
+            switch (patientLookupResult.status)
+            {
+                // Add patient to database
+                case PatientLookupStatus.CreatedNew:
+                    patientLookupResult.patient.CreateInDatabase();
+                    break;
+
+                // Update patient in database
+                case PatientLookupStatus.Found:
+                    patientLookupResult.patient.UpdateInDatabase();
+                    break;
+            }
         }
 
         //____ ____ _  _ ____ ____ _    ____ ___  _  _ _ ___ 
@@ -533,6 +702,7 @@ namespace ADTEntityFramework
         {
             throw new NotImplementedException();
         }
+
 
     }
 
@@ -578,10 +748,11 @@ namespace ADTEntityFramework
                         return new PatientLookupResult(PatientLookupStatus.Found, patient);
 
                     }
+                    // TargetInvocationException
                     catch (Exception)
                     {
                         patient = new Patient(ID_toQuery);
-                        return new PatientLookupResult(PatientLookupStatus.CreatedNew, null);
+                        return new PatientLookupResult(PatientLookupStatus.CreatedNew, patient);
                     }
                 }
             }
@@ -609,7 +780,7 @@ namespace ADTEntityFramework
 
             using (var db = new ADT_ModelContainer1())
             {
-                if (ID_toQuery == "") return new LocationLookupResult(LocationLookupStatus.Blank, null);
+                if (ID_toQuery == null || ID_toQuery == "") return new LocationLookupResult(LocationLookupStatus.Blank, null);
                 else
                 {
                     try
@@ -617,6 +788,8 @@ namespace ADTEntityFramework
                         // Try to find the location
                         location = db.Locations.First(loc => loc.LocationID == ID_toQuery);
                         
+                        // Location Found!
+
                         // Check for existing patient
                         try
                         {
@@ -631,12 +804,14 @@ namespace ADTEntityFramework
                             // No patient was in that room
                             return new LocationLookupResult(LocationLookupStatus.Found_NoExistingPatient, location);
                         }
-                    }
+                    } 
+                    // TargetInvocationException
                     catch (Exception)
                     {
                         if (Global.CreateLocations)
                         {
                             location = new Location(ID_toQuery);
+                            location.CreateInDatabase();
                             return new LocationLookupResult(LocationLookupStatus.CreatedNew, location);
                         }
                         else
@@ -648,7 +823,44 @@ namespace ADTEntityFramework
         }
     }
 
+
+    public partial class ADT_ModelContainer1
+    {
+        public override int SaveChanges()
+        {
+            try
+            {
+                return base.SaveChanges();
+            }
+            catch (DbEntityValidationException ex)
+            {
+                // Retrieve the error messages as a list of strings.
+                var errorMessages = ex.EntityValidationErrors
+                        .SelectMany(x => x.ValidationErrors)
+                        .Select(x => x.ErrorMessage);
+
+                // Join the list to a single string.
+                var fullErrorMessage = string.Join("\n\t\t", errorMessages);
+
+                // Combine the original exception message with the new one.
+                var exceptionMessage = string.Concat("Caught DbEntityValidationException\n\tEntityValidationErrors:\n\t\t", fullErrorMessage);
+
+                // Throw a new DbEntityValidationException with the improved exception message.
+                throw new DbEntityValidationException(exceptionMessage, ex.EntityValidationErrors);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message + "\nINNER EXCEPTION:\n" + ex.InnerException);
+            }
+        }
+
+    }
+
+
     #endregion Model Extensions
+
+
+
 
 
     //		
@@ -663,6 +875,24 @@ namespace ADTEntityFramework
     //		
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #region Transport Layer
+
+
+
+    public class ADTLookupResult
+    {
+        public ADTLookupStatus status;
+        public ADTMessage message;
+
+        public ADTLookupResult(
+            ADTLookupStatus _status,
+            ADTMessage _message)
+        {
+            status = _status;
+            message = _message;
+        }
+    }
+
+
 
     //	
     //	 _                    _   _             _                _                ____                 _ _   
@@ -736,6 +966,17 @@ namespace ADTEntityFramework
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #region Statuses
 
+         
+    // MaxLength = 10
+    public enum ADTLookupStatus
+    {
+        Blank,
+        Found,
+        CreatedNew
+    }
+
+    // MaxLength 23
+
     //	
     //	 ____       _   _            _   ____  _        _             
     //	|  _ \ __ _| |_(_) ___ _ __ | |_/ ___|| |_ __ _| |_ _   _ ___ 
@@ -751,6 +992,7 @@ namespace ADTEntityFramework
         Discharged
     }
 
+    // Max Legth = 27
     //	 _                    _   _             _                _               ____  _        _             
     //	| |    ___   ___ __ _| |_(_) ___  _ __ | |    ___   ___ | | ___   _ _ __/ ___|| |_ __ _| |_ _   _ ___ 
     //	| |   / _ \ / __/ _` | __| |/ _ \| '_ \| |   / _ \ / _ \| |/ / | | | '_ \___ \| __/ _` | __| | | / __|

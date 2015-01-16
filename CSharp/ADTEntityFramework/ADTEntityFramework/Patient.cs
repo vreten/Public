@@ -15,7 +15,9 @@ namespace ADTEntityFramework
     
     public partial class Patient
     {
-        public Patient( // Here is the constructor
+        public Patient(){} // Here is the zero-parameter constructor
+    
+        public Patient( // Here is the initialization constructor
             string _PatientID,
             string _FirstName,
             string _LastName,

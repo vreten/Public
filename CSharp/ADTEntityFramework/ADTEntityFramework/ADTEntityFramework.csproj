@@ -72,10 +72,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ADT_Model.edmx</DependentUpon>
     </Compile>
-    <Compile Include="ADT_String.cs" />
     <Compile Include="Location.cs">
       <DependentUpon>ADT_Model.tt</DependentUpon>
     </Compile>
+    <Compile Include="MLog.cs" />
     <Compile Include="Patient.cs">
       <DependentUpon>ADT_Model.tt</DependentUpon>
     </Compile>

@@ -9,13 +9,13 @@
     <Key>
       <PropertyRef Name="MessageID" />
     </Key>
-    <Property Name="MessageID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+    <Property Name="MessageID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="None" MaxLength="255" />
     <Property Name="MessageType" Type="String" Nullable="false" />
-    <Property Name="PreviousLocationID" Type="String" Nullable="false" />
-    <Property Name="LocationID" Type="String" Nullable="false" />
-    <Property Name="PreviousStatus" Type="String" Nullable="false" />
+    <Property Name="PreviousLocationID" Type="String" Nullable="true" />
+    <Property Name="LocationID" Type="String" Nullable="true" />
+    <Property Name="PreviousStatus" Type="String" Nullable="true" />
     <Property Name="Status" Type="String" Nullable="false" />
-    <Property Name="KickedPatientID" Type="String" Nullable="false" />
+    <Property Name="KickedPatientID" Type="String" Nullable="true" />
     <Property Name="GeneratedTimestamp" Type="DateTime" Nullable="false" />
     <Property Name="MessageTimestamp" Type="DateTime" Nullable="false" />
     <Property Name="PatientID" Type="String" Nullable="false" />
@@ -24,16 +24,16 @@
     <Key>
       <PropertyRef Name="PatientID" />
     </Key>
-    <Property Name="PatientID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-    <Property Name="FirstName" Type="String" Nullable="false" />
-    <Property Name="LastName" Type="String" Nullable="false" />
+    <Property Name="PatientID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="None" MaxLength="255" />
+    <Property Name="FirstName" Type="String" Nullable="true" />
+    <Property Name="LastName" Type="String" Nullable="true" />
     <Property Name="Status" Type="String" Nullable="false" />
-    <Property Name="LocationID" Type="String" Nullable="false" />
+    <Property Name="LocationID" Type="String" Nullable="true" />
   </EntityType>
   <EntityType Name="Location">
     <Key>
       <PropertyRef Name="LocationID" />
     </Key>
-    <Property Name="LocationID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+    <Property Name="LocationID" Type="String" Nullable="false" annotation:StoreGeneratedPattern="None" MaxLength="255" />
   </EntityType>
 </Schema>

@@ -36,7 +36,9 @@ using System.Data.Entity;
     // if (propertiesWithDefaultValues.Any() || collectionNavigationProperties.Any() || complexProperties.Any())
     // {
 #>
-    public <#=code.Escape(entity)#>( // Here is the constructor
+    public <#=code.Escape(entity)#>(){} // Here is the zero-parameter constructor
+
+    public <#=code.Escape(entity)#>( // Here is the initialization constructor
         <#
         List<EdmProperty> simplePropertiesList = simpleProperties.ToList();
         int i = 0; 

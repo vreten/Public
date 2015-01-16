@@ -6,3 +6,5 @@ D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Maste
 D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.csproj.GenerateResource.Cache
 D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.exe
 D:\cunic.ddns.net\svn\trunk\StandaloneUtilities\HL7Master\obj\x86\Debug\HL7Master.pdb
+D:\GIT_ROOT\Public\CSharp\HL7Master\obj\x86\Debug\HL7Master.exe
+D:\GIT_ROOT\Public\CSharp\HL7Master\obj\x86\Debug\HL7Master.pdb

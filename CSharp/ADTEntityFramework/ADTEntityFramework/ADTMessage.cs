@@ -15,7 +15,9 @@ namespace ADTEntityFramework
     
     public partial class ADTMessage
     {
-        public ADTMessage( // Here is the constructor
+        public ADTMessage(){} // Here is the zero-parameter constructor
+    
+        public ADTMessage( // Here is the initialization constructor
             string _MessageID,
             string _MessageType,
             string _PreviousLocationID,
