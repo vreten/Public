@@ -9,4 +9,5 @@ D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\bin\Debug\Ent
 D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\bin\Debug\nunit.framework.xml
 D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\obj\Debug\Expressions.exe
 D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\obj\Debug\Expressions.pdb
+D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\bin\Debug\ADT_Model.edmx.sql
 D:\GIT_ROOT\Protected\CSharp\ADTEntityFramework\ADTEntityFramework\obj\Debug\ADTEntityFramework.csprojResolveAssemblyReference.cache

@@ -2,12 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Validation;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,9 +30,9 @@ namespace ADTEntityFramework
         public static int TCP_PORT = 2015;
         public static byte[] EOM = new byte[] { 0x1c, 0x0d };
 
-        public static bool DeleteDischargedPatients = false;   // TODO: code this
-
+        public static bool clearAllTables = true;
         public static bool CreateLocations = true;
+
         public static bool Process_A01 = true;
         public static bool Process_A02 = true;
         public static bool Process_A03 = true;
@@ -44,13 +48,21 @@ namespace ADTEntityFramework
         // Disabled: Ignore messages with duplicate message ID's
         public static bool AllowDuplicateMessageIDs = true;
 
-        // Log every received and sent message
-        public static bool LogAllMessages = false;
+        public static bool logToFile = true;
+        public static bool logToConsole = true;
 
         public static bool LogErrors = true;
         public static bool LogWarnings = true;
         public static bool logInfo = true;
         public static bool logDebug = false;
+
+        public static bool logIfSkipped = true;
+
+        // Log every received and sent message
+        public static bool LogAllMessages = false;
+
+
+        public static bool DeleteDischargedPatients = false;   // TODO: code this
 
     }
 
@@ -61,6 +73,32 @@ namespace ADTEntityFramework
             Thread TCP_Listen_Thread;
             TCP_Listen_Thread = new Thread(TCP_Listen_Thread_Function);
             TCP_Listen_Thread.Start();
+        }
+
+        static public void SqlFile_Execute(string path, ObjectContext objCtx)
+        {
+            var cleanAppDir = new Regex(@"\\bin.+");
+            string dir = AppDomain.CurrentDomain.BaseDirectory;
+            dir = cleanAppDir.Replace(dir, "") + @"\";
+            string allText = File.ReadAllText(dir + path);
+
+            var sql = allText.Split(new string[] { "GO" }, StringSplitOptions.RemoveEmptyEntries);
+
+
+            string[] ignore = new string[]
+            {
+                "--",
+                "GO",   // Migrations doesn't support GO
+                "/*",   // Migrations might not support comments
+                "print" // Migrations might not support print
+            };
+
+            foreach (var line in sql)
+            {
+
+                objCtx.ExecuteStoreCommand(line);
+
+            }
         }
 
         //		
@@ -82,22 +120,10 @@ namespace ADTEntityFramework
             ADTMessage adt_message;
             try
             {
-                MLog.Info("Caching database...");
-                try
-                {
-                    using (var db = new ADT_ModelContainer1())
-                    {
-                        var q1 = 
-                            from adt in db.ADTMessages
-                            where adt.MessageID == "1"
-                            select adt;
+                initDatabase();
 
-                        var c1 = q1.First();
-                    }
-                }
-                catch (Exception)
-                {
-                }
+
+                    
 
                 Int32 port = Convert.ToInt32(Global.TCP_PORT);
 
@@ -157,7 +183,8 @@ namespace ADTEntityFramework
                             // Read from/Write to Patient and Location tables in database
                             if (!adt_message.skip) adt_message.parse();
 
-                            adt_message.Log();
+                            if (!adt_message.skip || Global.logIfSkipped)
+                                adt_message.Log();
 
                             // Send an acknowledge
                             sendAck(stream);
@@ -176,10 +203,49 @@ namespace ADTEntityFramework
             {
                 MLog.Error("FATAL: SocketException: " + ex);
             }
+            catch(Exception ex)
+            {
+                MLog.Error("FATAL: " + ex);
+            }
             finally
             {
+                MLog.Info("Exiting");
+                MLog.saveLog(null, null);
+
                 // Stop listening for new clients.
                 server.Stop();
+            }
+        }
+
+        private static void initDatabase()
+        {
+            using (var db = new ADT_ModelContainer1())
+            {
+                var objCtx = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
+                try
+                {
+                    MLog.Info("Caching database...");
+
+                    objCtx.ExecuteStoreCommand("SELECT TOP 1000 [MessageID] from [ADT].[dbo].[ADTMessages]");
+                    objCtx.ExecuteStoreCommand("SELECT TOP 1000 [LocationID] from [ADT].[dbo].[Locations]");
+                    objCtx.ExecuteStoreCommand("SELECT TOP 1000 [PatientID] from [ADT].[dbo].[Patients]");
+
+                    if (Global.clearAllTables)
+                    {
+                        MLog.Info("    Clearing Tables...");
+
+                        objCtx.ExecuteStoreCommand("TRUNCATE TABLE [ADT].[dbo].[ADTMessages]");
+                        objCtx.ExecuteStoreCommand("TRUNCATE TABLE [ADT].[dbo].[Locations]");
+                        objCtx.ExecuteStoreCommand("TRUNCATE TABLE [ADT].[dbo].[Patients]");
+                    }
+
+                }
+
+                catch (Exception)
+                {
+                    MLog.Info("    Creating Tables...");
+                    SqlFile_Execute("ADT_Model.edmx.sql", objCtx);
+                }
             }
         }
 
@@ -331,6 +397,20 @@ namespace ADTEntityFramework
                             skip = true;
                             return;
                         }
+
+                        switch (MessageType)
+	                    {
+                            case "A01": if (Global.Process_A01) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A02": if (Global.Process_A02) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A03": if (Global.Process_A03) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A06": if (Global.Process_A06) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A07": if (Global.Process_A07) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A08": if (Global.Process_A08) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A11": if (Global.Process_A11) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A12": if (Global.Process_A12) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            case "A13": if (Global.Process_A13) break;  warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+                            default:                                    warnList.Add("SKIP: not configured to process " + MessageType); skip = true;  return;
+	                    }
 
                         break;
                     case "PID":
@@ -608,21 +688,39 @@ namespace ADTEntityFramework
         {
             string msg = LookupStatusesToString() + (skip? "Skipped! " : "STORED!  ");
 
-            if(warnList.Count() > 0) msg += warnList.Count() + " Warnings: " + string.Join("; ", warnList);
-            
-            MLog.Info(msg);
+            if (warnList.Count() > 0)
+            {
+                msg += warnList.Count() + " Warnings: " + string.Join("; ", warnList);
+                MLog.Warn(msg);
+            }
+            else
+                MLog.Info(msg);
         }
         
         
         private string LookupStatusesToString()
         {
+            string messageTypeFullName = "unknown";
+            switch (MessageType)
+            {
+                case "A01": messageTypeFullName = "A01 - Admit"; break;
+                case "A02": messageTypeFullName = "A02 - Transfer"; break;
+                case "A03": messageTypeFullName = "A03 - Discharge"; break;
+                case "A06": messageTypeFullName = "A06 - Out=>In"; break;
+                case "A07": messageTypeFullName = "A07 - In=>Out"; break;
+                case "A08": messageTypeFullName = "A08 - Update"; break;
+                case "A11": messageTypeFullName = "A11 - Cancel admit"; break;
+                case "A12": messageTypeFullName = "A12 - Cancel transfer"; break;
+                case "A13": messageTypeFullName = "A13 - Cancel discharge"; break;
+            }
+
             return String.Format( 
-                "msgID {0,-14}, msgType {1,-3}, adt {2,-10}, patient {3,-10}, location = {4,-27}: ",
+                "adt {{ {0,-22}, {1,-14} }}, lookups {{ adt.{2,-10}, patient.{3,-10}, location.{4,-20} }}: ",
+                messageTypeFullName,
                 MessageID,
-                MessageType,
-                Enum.GetName(typeof(ADTLookupStatus), adtLookupResult.status),
-                Enum.GetName(typeof(PatientLookupStatus), patientLookupResult.status),
-                Enum.GetName(typeof(LocationLookupStatus), locationLookupResult.status)
+                adtLookupResult == null ? "null" : Enum.GetName(typeof(ADTLookupStatus), adtLookupResult.status),
+                patientLookupResult == null ? "null" : Enum.GetName(typeof(PatientLookupStatus), patientLookupResult.status),
+                locationLookupResult == null ? "null" : Enum.GetName(typeof(LocationLookupStatus), locationLookupResult.status)
             );
         }
 
@@ -797,12 +895,12 @@ namespace ADTEntityFramework
                             existingPatient = db.Patients.First(pat => pat.LocationID == ID_toQuery);
 
                             // There was a patient there...  this should almost NEVER happen... Time to kick them out.
-                            return new LocationLookupResult(LocationLookupStatus.Found_ExistingPatientKicked, location, existingPatient);
+                            return new LocationLookupResult(LocationLookupStatus.Found_PatientPresent, location, existingPatient);
                         }
                         catch (Exception)
                         {
                             // No patient was in that room
-                            return new LocationLookupResult(LocationLookupStatus.Found_NoExistingPatient, location);
+                            return new LocationLookupResult(LocationLookupStatus.Found_NoPatient, location);
                         }
                     } 
                     // TargetInvocationException
@@ -891,7 +989,6 @@ namespace ADTEntityFramework
             message = _message;
         }
     }
-
 
 
     //	
@@ -1003,8 +1100,8 @@ namespace ADTEntityFramework
     public enum LocationLookupStatus
     {
         Blank,
-        Found_NoExistingPatient,
-        Found_ExistingPatientKicked,
+        Found_NoPatient,
+        Found_PatientPresent,
         CreatedNew,
         NotFound_NotCreated
     }
